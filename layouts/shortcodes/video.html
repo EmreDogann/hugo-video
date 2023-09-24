@@ -1,13 +1,14 @@
 {{- /*  hugo-video shortcode
-/*
-/*    This file is part of hugo-video shortcode.
-/*    A Hugo component shortcode to embed videos using the HTML video element.
-/*
-/*    @copyright  @2019 onwards Nicolas Martignoni (nicolas@martignoni.net)
-/*    @source     https://github.com/martignoni/hugo-video
-/*    @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
-/*
-*/ -}}
+	/*
+	/*    This file is part of hugo-video shortcode.
+	/*    A Hugo component shortcode to embed videos using the HTML video element.
+	/*
+	/*    @copyright  @2019 onwards Nicolas Martignoni (nicolas@martignoni.net)
+	/*    @source     https://github.com/martignoni/hugo-video
+	/*    @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+	/*
+	*/
+-}}
 
 {{- $video_src := .Get "src" -}}
 {{- $video_mp4 := "" -}}
@@ -17,6 +18,7 @@
 {{- $width := "100%" -}}
 {{- $filenotfound := true -}}
 {{- $unsupportedfile := true -}}
+{{- $caption := .Get "caption" -}}
 
 {{- /* Find all files with filename (without suffix) matching "src" parameter. */ -}}
 {{- $video_files := (.Page.Resources.Match (printf "%s*" $video_src)) -}}
@@ -26,42 +28,57 @@
 
 {{- /* Find in page bundle all valid video files with matching name. */ -}}
 {{- with $video_files -}}
-  {{- $filenotfound = false -}}
-  {{- range . -}}
-    {{- if or (in .MediaType.Suffixes "mp4") (in .MediaType.Suffixes "m4v") -}}
-      {{- $unsupportedfile = false -}}
-      {{- $video_mp4 = . -}}
-    {{- end -}}
-    {{- if (in .MediaType.Suffixes "webm") -}}
-      {{- $unsupportedfile = false -}}
-      {{- $video_webm = . -}}
-    {{- end -}}
-    {{- if (in .MediaType.Suffixes "ogv") -}}
-      {{- $unsupportedfile = false -}}
-      {{- $video_ogg = . -}}
-    {{- end -}}
-  {{- end -}}
+	{{- $filenotfound = false -}}
+	{{- range . -}}
+		{{- if or (in .MediaType.Suffixes "mp4") (in .MediaType.Suffixes "m4v") -}}
+			{{- $unsupportedfile = false -}}
+			{{- $video_mp4 = . -}}
+		{{- end -}}
+		{{- if (in .MediaType.Suffixes "webm") -}}
+			{{- $unsupportedfile = false -}}
+			{{- $video_webm = . -}}
+		{{- end -}}
+		{{- if (in .MediaType.Suffixes "ogv") -}}
+			{{- $unsupportedfile = false -}}
+			{{- $video_ogg = . -}}
+		{{- end -}}
+	{{- end -}}
 {{- end -}}
 
 {{- if $filenotfound -}}
-  {{- /* No file of given name was found, we stop here. */ -}}
-  {{- errorf "No file with filename %q found." $video_src -}}
+	{{- /* No file of given name was found, we stop here. */ -}}
+	{{- errorf "No file with filename %q found." $video_src -}}
 {{- else if $unsupportedfile -}}
-  {{- errorf "No valid video file with filename %q found." $video_src -}}
+	{{- errorf "No valid video file with filename %q found." $video_src -}}
 {{- else -}}
-<video {{ if ne (.Get "controls") "false" }}controls {{ end }}preload="auto" width="{{ or (.Get "width") $width }}" {{ with .Get "height" }}height="{{.}}"{{ end }} {{ if eq (.Get "autoplay") "true" }}autoplay {{ end }}{{ if eq (.Get "loop") "true" }}loop {{ end }}{{ if eq (.Get "muted") "true" }}muted {{ end }}{{ with $poster }}poster="{{ .RelPermalink }}" {{ end }}playsinline class="html-video">
-  {{- with $video_webm }}
-    <source src="{{ .RelPermalink }}" type="video/webm">
-    {{- $video_dl = . -}}
-  {{- end }}
-  {{- with $video_ogg }}
-    <source src="{{ .RelPermalink }}" type="video/ogg">
-    {{- $video_dl = . -}}
-  {{- end }}
-  {{- with $video_mp4 }}
-    <source src="{{ .RelPermalink }}" type="video/mp4">
-    {{- $video_dl = . -}}
-  {{- end }}
-  <span>{{ i18n "videoUnsupported" $video_dl | safeHTML}}</span>
-</video>
+	<div>
+		<video
+			{{ if ne (.Get "controls") "false" }}controls{{ end }}
+			preload="auto"
+			width="{{ or (.Get "width") $width }}"
+			{{ with .Get "height" }}height="{{ . }}"{{ end }}
+			{{ if eq (.Get "autoplay") "true" }}autoplay{{ end }}{{ if eq (.Get "loop") "true" }}
+				loop
+			{{ end }}{{ if eq (.Get "muted") "true" }}muted{{ end }}{{ with $poster }}
+				poster="{{ .RelPermalink }}"
+			{{ end }}
+			playsinline
+			data-zoomable
+			class="html-video {{ with $caption }}mb-0{{ end }}">
+			{{- with $video_webm }}
+				<source src="{{ .RelPermalink }}" type="video/webm" />
+				{{- $video_dl = . -}}
+			{{- end }}
+			{{- with $video_ogg }}
+				<source src="{{ .RelPermalink }}" type="video/ogg" />
+				{{- $video_dl = . -}}
+			{{- end }}
+			{{- with $video_mp4 }}
+				<source src="{{ .RelPermalink }}" type="video/mp4" />
+				{{- $video_dl = . -}}
+			{{- end }}
+			<span>{{ i18n "videoUnsupported" $video_dl | safeHTML }}</span>
+		</video>
+		{{ with $caption }}<figcaption>{{ . | markdownify }}</figcaption>{{ end }}
+	</div>
 {{- end -}}
